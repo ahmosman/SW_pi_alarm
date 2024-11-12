@@ -12,3 +12,7 @@ class Display:
 
     def clear(self):
         self.lcd.clear()
+
+    def print(self, top, bottom = ""):
+        self.lcd.text(top, 1)
+        self.lcd.text(bottom, 2)

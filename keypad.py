@@ -47,7 +47,7 @@ class Keypad:
 
     def getInput(self):
         key = self.getKey()
-        if key is not None and not self.isKey("*"):
+        if key is not None:
             if key == "#":
                 self.input = self.input[:-1]
             else:
