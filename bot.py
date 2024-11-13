@@ -32,7 +32,7 @@ class Bot:
         chatId = msg['message']['chat']['id']
         data = msg['data']
         if data == 'arm_alarm':
-            self.armAlarm(queryId, chatId)
+            self.alarmArmPending(queryId)
 
     def startCommand(self, chatId):
         if chatId not in self.startedChats:
@@ -50,20 +50,23 @@ class Bot:
             self.bot.sendMessage(chatId, "The alarm bot has been reset.")
             self.alarm.setState("alarm_unarmed")
 
-    def armAlarm(self, queryId, chatId):
-        self.bot.answerCallbackQuery(queryId, text="Alarm armed!")
-        self.bot.sendMessage(chatId, "The alarm has been armed.")
-        self.alarm.setState("alarm_armed")
+    def alarmArmPending(self, queryId):
+        self.bot.answerCallbackQuery(queryId, text="Alarm arm pending.")
+        self.alarm.setState("alarm_arm_pending")
+
+    def alarmArmed(self):
+        for chatId in self.startedChats:
+            self.bot.sendMessage(chatId, "Alarm armed.")
 
     def sendPassword(self):
         for chatId in self.startedChats:
             self.bot.sendMessage(chatId, "Your password: " + self.alarm.correct_password)
     
-    def triggerAlarm(self):
+    def triggeredAlarm(self):
         for chatId in self.startedChats:
             self.bot.sendMessage(chatId, "Alarm triggered!")
     
-    def unarmAlarm(self):
+    def unarmedAlarm(self):
         for chatId in self.startedChats:
             self.bot.sendMessage(chatId, "Alarm un-armed.")
     

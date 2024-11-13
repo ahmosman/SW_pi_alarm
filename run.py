@@ -23,6 +23,12 @@ class AlarmSystem:
             while True:
                 if self.alarm.isState("alarm_unarmed"):
                     self.display.print("Alarm un-armed", "Use bot to arm")
+                
+                elif self.alarm.isState("alarm_arm_pending"):
+                    for i in range(10):
+                        self.display.print("Alarm armed in", str(10-i) + "s")
+                        time.sleep(1)
+                    self.armAlarm()
 
                 elif self.alarm.isState("alarm_armed"):
 
@@ -73,11 +79,15 @@ class AlarmSystem:
 
     def triggerAlarm(self):
         self.alarm.setState("alarm_triggered")
-        self.bot.triggerAlarm()
+        self.bot.triggeredAlarm()
     
+    def armAlarm(self):
+        self.alarm.setState("alarm_armed")
+        self.bot.alarmArmed()
+
     def unarmAlarm(self):
         self.alarm.setState("alarm_unarmed")
-        self.bot.unarmAlarm()
+        self.bot.unarmedAlarm()
 
     def setWrongPassword(self):
         self.alarm.setState("wrong_password")

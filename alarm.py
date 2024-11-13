@@ -7,6 +7,7 @@ import random
 # get_password: get password from user
 # wrong_password: wrong password entered
 # alarm_triggered: alarm is triggered
+# alarm_arm_pending: alarm is pending to be armed
 
 class Alarm:
     def __init__(self):
