@@ -47,8 +47,7 @@ class AlarmSystem:
                     self.display.print("Password:", self.keypad.getInput())
 
                     if self.keypad.isKey("*"):
-                        self.validatePassword()
-                        self.alarm.checkPassword(self.keypad.input)
+                        self.handlePassword()
                         self.keypad.clearInput()
 
                 elif self.alarm.isState("wrong_password"):
@@ -56,6 +55,12 @@ class AlarmSystem:
 
                 elif self.alarm.isState("alarm_triggered"):
                     self.display.print("Alarm triggered")
+                
+                elif self.alarm.isState("adding_chat"):
+                    self.display.print("Chat key:", self.keypad.getInput())
+                    if self.keypad.isKey("*"):
+                        self.handleChatCode()
+                        self.keypad.clearInput()
 
         except KeyboardInterrupt:
             pass
@@ -64,7 +69,7 @@ class AlarmSystem:
             self.display.clear()
             self.keypad.cleanup()
 
-    def validatePassword(self):
+    def handlePassword(self):
         if self.alarm.checkPassword(self.keypad.input):
             self.unarmAlarm()
         elif self.alarm.password_attempts > 3:
@@ -96,6 +101,15 @@ class AlarmSystem:
         time.sleep(3)
         self.setGetPassword()
 
+    def handleChatCode(self):
+        if self.alarm.checkChatCode(self.keypad.input):
+            self.bot.chatVerified()
+        else:
+            self.display.print("Wrong chat code")
+            time.sleep(3)
+        self.alarm.resetAddingChat()
+        self.alarm.setState("alarm_unarmed")
+        
 
 if __name__ == "__main__":
     alarm_system = AlarmSystem()
