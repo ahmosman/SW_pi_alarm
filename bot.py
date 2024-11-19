@@ -27,7 +27,6 @@ class Bot:
                 self.addNewChatCommand(msg['chat'])
             return
 
-
         if msg_text:
             self.handleTextMessage(msg_text, chat_id)
         elif data:
@@ -35,13 +34,15 @@ class Bot:
 
     def handleTextMessage(self, msg_text, chat_id):
         if msg_text == "/start":
-            self.bot.sendMessage(chat_id, "You are already verified.", reply_markup=self.getReplyMarkup())
+            self.bot.sendMessage(chat_id, "You are already verified.", reply_markup=self.getArmMarkup())
         if msg_text == "/list":
             self.listVerifiedChats(chat_id)
 
     def handleCallbackQuery(self, data, query_id):
         if data == 'arm_alarm':
             self.alarmArmPending(query_id)
+        if data == 'disarm_alarm':
+            self.setGetPassword(query_id)
 
     def addNewChatCommand(self, chat_data):
         chat_id = chat_data['id']
@@ -76,10 +77,10 @@ class Bot:
         self.notifyChats(f"Your password: {self.alarm.correct_password}")
 
     def triggeredAlarm(self):
-        self.notifyChats("Alarm triggered!")
+        self.notifyChats("Alarm triggered!", reply_markup=self.getDisarmMarkup())
 
     def unarmedAlarm(self):
-        self.notifyChats("Alarm un-armed.", reply_markup=self.getReplyMarkup())
+        self.notifyChats("Alarm un-armed.", reply_markup=self.getArmMarkup())
 
     def wrongPassword(self):
         self.notifyChats("Wrong password entered.")
@@ -87,12 +88,17 @@ class Bot:
     def chatVerified(self):
         chat_id = int(self.alarm.adding_chat['id'])
         self.verified_chats[chat_id] = self.alarm.adding_chat
-        self.bot.sendMessage(chat_id, "Welcome to alarm bot! Your alarm system is ready.", reply_markup=self.getReplyMarkup())
+        self.bot.sendMessage(chat_id, "Welcome to alarm bot! Your alarm system is ready.", reply_markup=self.getArmMarkup())
         self.saveVerifiedChats()
 
-    def getReplyMarkup(self):
+    def getArmMarkup(self):
         return InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text='Arm Alarm', callback_data='arm_alarm')]
+        ])
+
+    def getDisarmMarkup(self):
+        return InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text='Disarm Alarm', callback_data='disarm_alarm')]
         ])
 
     def saveVerifiedChats(self):
@@ -133,3 +139,12 @@ class Bot:
         if 'from' in msg:
             return msg['from']['id']
         return None
+
+    def setGetPassword(self, query_id):
+        if not self.alarm.isState("alarm_triggered"):
+            self.bot.answerCallbackQuery(query_id, text="Alarm is not triggered.")
+        else:
+            self.bot.answerCallbackQuery(query_id, text="Enter password.")
+            self.alarm.setState("get_password")
+            self.alarm.resetPassword()
+            self.sendPassword()

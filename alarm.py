@@ -1,5 +1,6 @@
 import random
 from datetime import datetime
+import time
 
 #states description:
 # alarm_unarmed: alarm is unarmed
@@ -11,12 +12,18 @@ from datetime import datetime
 # adding_chat: adding chat to alarm system
 
 class Alarm:
+    ALLOWED_PASSWORD_ATTEMPTS = 3
+    TIME_TO_PROVIDE_PASSWORD = 21  # in seconds
+    ARM_PENDING_TIME = 5  # in seconds
+
     def __init__(self):
         self.state = "alarm_unarmed"
         self.correct_password = None
         self.adding_chat = {}
         self.chat_code = None
         self.password_attempts = 0
+        self.remaining_time = None
+        self.remaining_time_check = time.time()
 
     def setState(self, state):
         self.state = state
@@ -29,6 +36,7 @@ class Alarm:
 
     def resetPassword(self):
         self.correct_password = str(random.randint(1000, 9999))
+        self.remaining_time = Alarm.TIME_TO_PROVIDE_PASSWORD
 
     def checkPassword(self, password):
         if password.rstrip('*') == self.correct_password:

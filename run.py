@@ -3,12 +3,14 @@ from display import Display
 from keypad import Keypad
 from alarm import Alarm
 from bot import Bot
+from gpiozero import MotionSensor
 import time
 
 class AlarmSystem:
     def __init__(self):
         self.display = Display()
         self.keypad = Keypad([29, 31, 33, 35], [32, 36, 38])
+        self.motion_sensor = MotionSensor(14)
         self.alarm = Alarm()
         self.bot = Bot(self.alarm)
         signal(SIGTERM, self.safe_exit)
@@ -21,12 +23,14 @@ class AlarmSystem:
     def run(self):
         try:
             while True:
+
                 if self.alarm.isState("alarm_unarmed"):
                     self.display.print("Alarm un-armed", "Use bot to arm")
                 
                 elif self.alarm.isState("alarm_arm_pending"):
-                    for i in range(10):
-                        self.display.print("Alarm armed in", str(10-i) + "s")
+                    pending_time = Alarm.ARM_PENDING_TIME
+                    for i in range(pending_time):
+                        self.display.print("Alarm armed in", str(pending_time-i) + "s")
                         time.sleep(1)
                     self.armAlarm()
 
@@ -34,27 +38,26 @@ class AlarmSystem:
 
                     self.display.print("Alarm armed")
 
-                    input = self.keypad.getInput()
-
-                    print("Current input:", input)
-
-                    if self.alarm.isMotionDetected(input):
+                    if self.isMotionDetected():
                         self.setGetPassword()
                         self.keypad.clearInput()
 
                 elif self.alarm.isState("get_password"):
 
-                    self.display.print("Password:", self.keypad.getInput())
+                    self.display.print(f"Password:    {self.alarm.remaining_time}s", self.keypad.getInput())
 
                     if self.keypad.isKey("*"):
                         self.handlePassword()
                         self.keypad.clearInput()
+                    
+                    self.handleRemainingTime()
 
                 elif self.alarm.isState("wrong_password"):
                     self.display.print("Wrong password")
 
                 elif self.alarm.isState("alarm_triggered"):
-                    self.display.print("Alarm triggered")
+                    self.display.print("Alarm triggered!")
+                    # TODO: add telegram Disarm button
                 
                 elif self.alarm.isState("adding_chat"):
                     self.display.print("Chat key:", self.keypad.getInput())
@@ -72,7 +75,7 @@ class AlarmSystem:
     def handlePassword(self):
         if self.alarm.checkPassword(self.keypad.input):
             self.unarmAlarm()
-        elif self.alarm.password_attempts > 3:
+        elif self.alarm.password_attempts >= Alarm.ALLOWED_PASSWORD_ATTEMPTS:
             self.triggerAlarm()
         else:
             self.setWrongPassword()
@@ -109,6 +112,22 @@ class AlarmSystem:
             time.sleep(3)
         self.alarm.resetAddingChat()
         self.alarm.setState("alarm_unarmed")
+    
+    def isMotionDetected(self):
+        self.motion_sensor.wait_for_motion()
+        print("Motion detected")
+        # self.motion_sensor.wait_for_no_motion()
+        # print("No motion detected")
+        return True
+
+    def handleRemainingTime(self):
+        current_time = time.time()
+        if current_time - self.alarm.remaining_time_check >= 1:
+            self.alarm.remaining_time_check = current_time
+            self.alarm.remaining_time -= 1
+
+        if self.alarm.remaining_time == 0:
+            self.triggerAlarm()
         
 
 if __name__ == "__main__":
