@@ -14,8 +14,6 @@ class Bot:
         self.alarm = alarm
 
     def botLoop(self, msg):
-        print(msg)
-
         chat_id = self.getChatIdFromMessage(msg)
         msg_text = msg.get('text')
         data = msg.get('data')
@@ -46,17 +44,18 @@ class Bot:
 
     def addNewChatCommand(self, chat_data):
         chat_id = chat_data['id']
-        if not self.alarm.isState("alarm_unarmed"):
-            self.bot.sendMessage(chat_id, "Can't add user when alarm is armed.")
-            return
 
         if not self.alarm.canAddChat(chat_id):
             self.bot.sendMessage(chat_id, "Another user is adding a chat.")
             return
+        
+        if not self.alarm.isState("alarm_unarmed"):
+            self.bot.sendMessage(chat_id, "Can't add user when alarm is armed.")
+            return
 
         self.alarm.setAddingChat(chat_data)
         code = self.alarm.generateCodeForChat()
-        self.bot.sendMessage(chat_id, f"Your code is: {code}. Please enter this code in the keypad.")
+        self.bot.sendMessage(chat_id, f"Your code is: {code}. Please enter this code in the keypad to verify. Confirm with <*>.")
         self.alarm.setState("adding_chat")
 
     def alarmArmPending(self, query_id):
@@ -74,7 +73,7 @@ class Bot:
         self.notifyChats("Alarm armed.")
 
     def sendPassword(self):
-        self.notifyChats(f"Your password: {self.alarm.correct_password}")
+        self.notifyChats(f"Your password: {self.alarm.correct_password}. Confirm with <*>.")
 
     def triggeredAlarm(self):
         self.notifyChats("Alarm triggered!", reply_markup=self.getDisarmMarkup())
@@ -116,11 +115,10 @@ class Bot:
             return {}
 
     def isVerifiedChat(self, chat_id):
-        print("verified_chats", self.verified_chats)
         return chat_id in self.verified_chats
     
     def listVerifiedChats(self, chat_id):
-        
+                
         #list as e.g.:
         #1. John Doe, joined on 2024-01-01 12:00
         #2. Jack Black, joined on 2024-11-30 23:59
@@ -130,9 +128,8 @@ class Bot:
             chat_list.append(f"{i}. {chat['first_name']} {chat['last_name']}, joined on {chat['date_joined']}")
         
         chat_list_str = "\n".join(chat_list)
-        
         self.bot.sendMessage(chat_id, chat_list_str)
-    
+
     def getChatIdFromMessage(self, msg):
         if 'chat' in msg:
             return msg['chat']['id']

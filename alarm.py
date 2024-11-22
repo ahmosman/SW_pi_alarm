@@ -2,7 +2,7 @@ import random
 from datetime import datetime
 import time
 
-#states description:
+# States description:
 # alarm_unarmed: alarm is unarmed
 # alarm_armed: alarm is armed
 # get_password: get password from user
@@ -23,13 +23,9 @@ class Alarm:
         self.chat_code = None
         self.password_attempts = 0
         self.remaining_time = None
-        self.remaining_time_check = time.time()
 
     def setState(self, state):
         self.state = state
-
-    def isMotionDetected(self, input):
-        return input == "22*"
 
     def isState(self, state):
         return self.state == state

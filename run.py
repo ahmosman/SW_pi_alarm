@@ -13,6 +13,7 @@ class AlarmSystem:
         self.motion_sensor = MotionSensor(14)
         self.alarm = Alarm()
         self.bot = Bot(self.alarm)
+        self.last_time_checked = time.time()
         signal(SIGTERM, self.safe_exit)
         signal(SIGHUP, self.safe_exit)
 
@@ -23,6 +24,7 @@ class AlarmSystem:
     def run(self):
         try:
             while True:
+                current_time = time.time()
 
                 if self.alarm.isState("alarm_unarmed"):
                     self.display.print("Alarm un-armed", "Use bot to arm")
@@ -35,7 +37,6 @@ class AlarmSystem:
                     self.armAlarm()
 
                 elif self.alarm.isState("alarm_armed"):
-
                     self.display.print("Alarm armed")
 
                     if self.isMotionDetected():
@@ -43,14 +44,18 @@ class AlarmSystem:
                         self.keypad.clearInput()
 
                 elif self.alarm.isState("get_password"):
+                    if current_time - self.last_time_checked >= 1:
+                        self.alarm.remaining_time -= 1
+                        self.last_time_checked = current_time
 
                     self.display.print(f"Password:    {self.alarm.remaining_time}s", self.keypad.getInput())
 
                     if self.keypad.isKey("*"):
                         self.handlePassword()
                         self.keypad.clearInput()
-                    
-                    self.handleRemainingTime()
+
+                    if self.alarm.remaining_time <= 0:
+                        self.triggerAlarm()
 
                 elif self.alarm.isState("wrong_password"):
                     self.display.print("Wrong password")
@@ -114,21 +119,7 @@ class AlarmSystem:
         self.alarm.setState("alarm_unarmed")
     
     def isMotionDetected(self):
-        self.motion_sensor.wait_for_motion()
-        print("Motion detected")
-        # self.motion_sensor.wait_for_no_motion()
-        # print("No motion detected")
-        return True
-
-    def handleRemainingTime(self):
-        current_time = time.time()
-        if current_time - self.alarm.remaining_time_check >= 1:
-            self.alarm.remaining_time_check = current_time
-            self.alarm.remaining_time -= 1
-
-        if self.alarm.remaining_time == 0:
-            self.triggerAlarm()
-        
+        return self.motion_sensor.motion_detected
 
 if __name__ == "__main__":
     alarm_system = AlarmSystem()
