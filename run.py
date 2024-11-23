@@ -62,7 +62,6 @@ class AlarmSystem:
 
                 elif self.alarm.isState("alarm_triggered"):
                     self.display.print("Alarm triggered!")
-                    # TODO: add telegram Disarm button
                 
                 elif self.alarm.isState("adding_chat"):
                     self.display.print("Chat key:", self.keypad.getInput())
